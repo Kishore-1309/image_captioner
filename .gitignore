@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Data files
+data/
+features/
+checkpoints/
+
+# Environment
+.env
+*.env
+
+# IDE
+.vscode/
+.idea/
