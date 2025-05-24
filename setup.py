@@ -12,7 +12,7 @@ setup(
         "transformers>=4.25.0",
         "pandas>=1.5.0",
         "tqdm>=4.64.0",
-        "Pillow>=9.3.0"
+        "Pillow>=9.3.0",
         "clip @ git+https://github.com/openai/CLIP.git"
     ],
     entry_points={
