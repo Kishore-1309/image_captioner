@@ -1,6 +1,6 @@
 # Image Captioning Project 🖼️✍️
 
-Generate captions for images using CLIP + GPT-2
+Generate captions for images using a bridge between CLIP + GPT-2
 
 ## 🚀 Installation
 

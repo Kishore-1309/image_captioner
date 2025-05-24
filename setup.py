@@ -4,6 +4,9 @@ setup(
     name="image-captioner",
     version="1.0.0",
     packages=find_packages(),
+    description="Image Captioning with CLIP and GPT-2 using Cross-Attention",
+    author="Chandra Kishore",
+    author_email="chkishoreg@gmail.com",
     install_requires=[
         "torch>=1.10.0",
         "transformers>=4.25.0",
@@ -15,6 +18,7 @@ setup(
     entry_points={
         "console_scripts": [
             "captioner-train=image_captioner.train:train",
+            "captioner-preprocess=image_captioner.preprocess:main",
             "captioner-extract=image_captioner.feature_extractor:extract_features"
         ],
     },
