@@ -13,7 +13,7 @@ setup(
         "pandas>=2.2.0,<2.3.0",
         "tqdm>=4.67.0,<4.68.0",
         "Pillow>=11.1.0,<11.2.0",
-        "matplotlib>=3.5,<4.0",
+        "matplotlib>=3.5.0,<4.0.0",
         "clip @ git+https://github.com/openai/CLIP.git"
     ],
     entry_points={
