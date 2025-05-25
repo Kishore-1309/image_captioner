@@ -28,7 +28,7 @@ def preprocess_dataset(dataset_name: str, dataset_path: str) -> pd.DataFrame:
     
     try:
         if dataset_name == 'flickr8k':
-            caption_file = os.path.join(dataset_path, 'Flickr8k.token.txt')
+            caption_file = os.path.join(dataset_path)
             with open(caption_file, 'r') as f:
                 for line in f:
                     if '\t' in line:
