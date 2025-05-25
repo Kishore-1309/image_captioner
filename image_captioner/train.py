@@ -2,7 +2,8 @@ import argparse
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, AdamW
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from torch.optim import AdamW
 from tqdm import tqdm
 from .dataset import CaptionDataset
 from .model import TransformerBridge, CLIPGPT2CaptionModel
