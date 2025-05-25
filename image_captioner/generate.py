@@ -1,9 +1,10 @@
 import torch
-from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel, GPT2LMHeadModel, GPT2Config
+from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
 from PIL import Image
 from .model import CLIPGPT2CaptionModel, TransformerBridge
 from .config import Config
 from .utils import load_checkpoint
+from .feature_extractor import load_clip_model, extract_features_from_image
 from huggingface_hub import hf_hub_download
 
 config = Config()
@@ -32,9 +33,17 @@ def generate_caption(
         Generated caption string
     """
 
-    # Load CLIP model and processor
-    clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
-    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    # Load CLIP model and processor using modular function
+    clip_model, processor, device = load_clip_model(device=device)
+
+    # Extract image features using modular function
+    feature_tensor = extract_features_from_image(
+        image_path=image_path,
+        save_path="temp.pt",  # temp file, or you can skip saving
+        model=clip_model,
+        processor=processor,
+        device=device
+    ).unsqueeze(0).to(device)  # Shape: [1, 512]
 
     # Load tokenizer
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -44,14 +53,14 @@ def generate_caption(
     # GPT-2 setup with cross-attention
     gpt2_config = GPT2Config.from_pretrained("gpt2")
     gpt2_config.add_cross_attention = True
-    gpt2 = GPT2LMHeadModel(gpt2_config)  # Initialize from config only (no pre-trained weights)
+    gpt2 = GPT2LMHeadModel(gpt2_config)  # Initialize from config only
 
     # Build the complete model
     bridge = TransformerBridge()
     model = CLIPGPT2CaptionModel(bridge, gpt2)
     model.gpt2.resize_token_embeddings(len(tokenizer))
 
-    # Download and load the trained checkpoint
+    # Load trained checkpoint
     model_path = hf_hub_download(
         repo_id=repo_id,
         filename=filename,
@@ -60,24 +69,18 @@ def generate_caption(
     model, _, _ = load_checkpoint(
         path=model_path,
         model=model,
-        optimizer=None,  # Skip optimizer state
+        optimizer=None,
         device=device
     )
     model.eval()
     model.to(device)
-
-    # Preprocess image and extract CLIP features
-    image = Image.open(image_path).convert("RGB")
-    inputs = processor(images=image, return_tensors="pt").to(device)
-    with torch.no_grad():
-        image_features = clip_model.get_image_features(**inputs)
 
     # Start caption generation
     input_ids = tokenizer.encode(tokenizer.bos_token, return_tensors="pt").to(device)
 
     with torch.no_grad():
         for _ in range(max_length):
-            outputs = model(input_ids, None, image_features)
+            outputs = model(input_ids, None, feature_tensor)
             next_token_logits = outputs.logits[:, -1, :] / temperature
             next_token = torch.multinomial(
                 torch.softmax(next_token_logits, dim=-1),
