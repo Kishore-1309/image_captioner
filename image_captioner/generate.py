@@ -14,7 +14,7 @@ device = config.DEVICE
 def generate_caption(
     image_path: str,
     repo_id: str = "Kishore0729/image-captioning-model",
-    filename: str = "checkpoint_epoch_10.pt",
+    filename: str = "checkpoint_epoch_1.pt",
     max_length: int = 30,
     temperature: float = 0.7,
     top_k: int = 50
@@ -46,24 +46,26 @@ def generate_caption(
         device=device
     ).unsqueeze(0).to(device)  # Shape: [1, 512]
 
-    # Load tokenizer
+    # Load tokenizer and GPT-2 model
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.add_special_tokens({"bos_token": "<bos>", "eos_token": "<eos>"})
 
-    # Setup GPT2 with cross-attention
     gpt2_config = GPT2Config.from_pretrained("gpt2")
     gpt2_config.add_cross_attention = True
     gpt2 = GPT2LMHeadModel(gpt2_config)
 
-    # Build final model
+    # Build the CLIP-GPT2 model
     bridge = TransformerBridge()
     model = CLIPGPT2CaptionModel(bridge, gpt2)
-    model.gpt2.resize_token_embeddings(len(tokenizer))
 
-    # Load trained weights from Hugging Face
+    # Load the trained weights from Hugging Face
     model_path = hf_hub_download(repo_id=repo_id, filename=filename, repo_type="model")
     model, _, _ = load_checkpoint(model_path, model, optimizer=None, device=device)
+
+    # Now resize token embeddings after loading weights
+    model.gpt2.resize_token_embeddings(len(tokenizer))
+
     model.eval()
     model.to(device)
 
