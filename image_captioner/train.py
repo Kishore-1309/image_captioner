@@ -9,6 +9,7 @@ from .dataset import CaptionDataset
 from .model import TransformerBridge, CLIPGPT2CaptionModel
 from .utils import save_checkpoint
 from .config import Config
+from huggingface_hub import hf_hub_download
 
 def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     config = Config()
@@ -27,6 +28,8 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     bridge = TransformerBridge()
     model = CLIPGPT2CaptionModel(bridge, gpt2)
 
+
+
     # Use DataParallel if multiple GPUs available
     if torch.cuda.device_count() > 1:
         print(f"Using {torch.cuda.device_count()} GPUs for training")
@@ -34,6 +37,20 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
 
     model = model.to(device)
     optimizer = AdamW(model.parameters(), lr=lr)
+
+    #loading weights from huggingface
+    checkpoint_path = hf_hub_download(
+    repo_id="Kishore0729/image-captioning-model",
+    filename="checkpoint_epoch_10.pt",  # or name of file you uploaded
+    repo_type="model"
+    )
+    # Load only the model weights
+    model, _, _ = load_checkpoint(
+    path=checkpoint_path,
+    model=model,
+    optimizer=None,  # Pass None to skip optimizer loading
+    device="cuda"     # or "cpu"
+    )
 
     # Training loop
     for epoch in range(num_epochs):
