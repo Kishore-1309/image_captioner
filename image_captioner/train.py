@@ -2,7 +2,7 @@ import argparse
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformers import GPT2Tokenizer, GPT2LMHeadModel,GPT2Config
 from torch.optim import AdamW
 from tqdm import tqdm
 from .dataset import CaptionDataset
@@ -21,7 +21,9 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
     # Model setup
-    gpt2 = GPT2LMHeadModel.from_pretrained("gpt2")
+    gpt2_config = GPT2Config.from_pretrained("gpt2")
+    gpt2_config.add_cross_attention = True
+    gpt2 = GPT2LMHeadModel.from_pretrained("gpt2", config=gpt2_config)
     bridge = TransformerBridge()
     model = CLIPGPT2CaptionModel(bridge, gpt2).to(device)
     optimizer = AdamW(model.parameters(), lr=lr)
