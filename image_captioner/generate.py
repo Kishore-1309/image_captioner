@@ -1,5 +1,5 @@
 import torch
-from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel, GPT2LMHeadModel,GPT2Config
+from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel, GPT2LMHeadModel, GPT2Config
 from PIL import Image
 from .model import CLIPGPT2CaptionModel, TransformerBridge
 from .config import Config
@@ -12,9 +12,9 @@ device = config.DEVICE
 def generate_caption(
     image_path: str,
     repo_id: str = "Kishore0729/image-captioning-model",
-    filename: str = "checkpoint_epoch_11.pt",
+    filename: str = "checkpoint_epoch_10.pt",
     max_length: int = 30,
-    temperature: float = 0.9,
+    temperature: float = 0.7,
     top_k: int = 50
 ) -> str:
     """
@@ -31,43 +31,48 @@ def generate_caption(
     Returns:
         Generated caption string
     """
-    # Load device
-    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load CLIP model and processor
     clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
     processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-    # Load GPT-2 and tokenizer
+    # Load tokenizer
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
-    # Model setup
+    tokenizer.add_special_tokens({"bos_token": "<bos>", "eos_token": "<eos>"})
+
+    # GPT-2 setup with cross-attention
     gpt2_config = GPT2Config.from_pretrained("gpt2")
     gpt2_config.add_cross_attention = True
-    gpt2 = GPT2LMHeadModel.from_pretrained("gpt2", config=gpt2_config)
+    gpt2 = GPT2LMHeadModel(gpt2_config)  # Initialize from config only (no pre-trained weights)
+
+    # Build the complete model
     bridge = TransformerBridge()
     model = CLIPGPT2CaptionModel(bridge, gpt2)
+    model.gpt2.resize_token_embeddings(len(tokenizer))
 
-    # Download checkpoint from Hugging Face
-    model_path = hf_hub_download(repo_id="Kishore0729/image-captioning-model",
-    filename="checkpoint_epoch_10.pt",  # or name of file you uploaded
-    repo_type="model")
-    # Load only the model weights
+    # Download and load the trained checkpoint
+    model_path = hf_hub_download(
+        repo_id=repo_id,
+        filename=filename,
+        repo_type="model"
+    )
     model, _, _ = load_checkpoint(
-    path=model_path,
-    model=model,
-    optimizer=None,  # Pass None to skip optimizer loading
-    device="cuda"     # or "cpu"
+        path=model_path,
+        model=model,
+        optimizer=None,  # Skip optimizer state
+        device=device
     )
     model.eval()
+    model.to(device)
 
-    # Process image
+    # Preprocess image and extract CLIP features
     image = Image.open(image_path).convert("RGB")
     inputs = processor(images=image, return_tensors="pt").to(device)
     with torch.no_grad():
         image_features = clip_model.get_image_features(**inputs)
 
-    # Generate caption
+    # Start caption generation
     input_ids = tokenizer.encode(tokenizer.bos_token, return_tensors="pt").to(device)
 
     with torch.no_grad():
@@ -83,7 +88,6 @@ def generate_caption(
                 break
 
     return tokenizer.decode(input_ids[0], skip_special_tokens=True)
-
 
 if __name__ == "__main__":
     # Example usage
