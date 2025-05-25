@@ -49,7 +49,13 @@ def generate_caption(
     model_path = hf_hub_download(repo_id="Kishore0729/image-captioning-model",
     filename="checkpoint_epoch_10.pt",  # or name of file you uploaded
     repo_type="model")
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    # Load only the model weights
+    model, _, _ = load_checkpoint(
+    path=checkpoint_path,
+    model=model,
+    optimizer=None,  # Pass None to skip optimizer loading
+    device="cuda"     # or "cpu"
+    )
     model.eval()
 
     # Process image
