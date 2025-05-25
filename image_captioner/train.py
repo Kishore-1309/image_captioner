@@ -7,7 +7,7 @@ from torch.optim import AdamW
 from tqdm import tqdm
 from .dataset import CaptionDataset
 from .model import TransformerBridge, CLIPGPT2CaptionModel
-from .utils import save_checkpoint
+from .utils import save_checkpoint,load_checkpoint
 from .config import Config
 from huggingface_hub import hf_hub_download
 
