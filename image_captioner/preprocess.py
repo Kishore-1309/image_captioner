@@ -11,72 +11,55 @@ def clean_caption(text: str) -> str:
 
 def process_flickr8k(caption_file_path: str, output_csv_path: str = "flickr8k_processed.csv") -> pd.DataFrame:
     """
-    Process Flickr8K dataset from raw caption file to cleaned CSV.
+    Process Flickr8K dataset from CSV caption file to cleaned CSV.
     
     Args:
-        caption_file_path: Path to Flickr8K's caption.txt file
-        output_csv_path: Path to save the processed CSV (default: 'flickr8k_processed.csv')
-        
-    Returns:
-        DataFrame with columns ['image', 'caption']
+        caption_file_path: Path to Flickr8K's captions.csv file
+        output_csv_path: Path to save the processed CSV
     """
-    data = []
-    
     try:
-        # Verify file exists and is readable
+        # Verify file exists
         if not os.path.exists(caption_file_path):
             raise FileNotFoundError(f"File not found: {caption_file_path}")
         
         print(f"Reading captions from: {caption_file_path}")
         
-        with open(caption_file_path, 'r', encoding='utf-8') as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
-                if not line:
-                    continue  # Skip empty lines
-                
-                if '\t' in line:
-                    img_name, caption = line.split('\t')
-                    img_name = img_name.split('#')[0]  # Remove suffix (e.g., '#0')
-                    data.append({
-                        'image': img_name,
-                        'caption': clean_caption(caption)
-                    })
-                else:
-                    print(f"Warning: Line {line_num} has no tab separator: '{line}'")
+        # Read as CSV (handles both header and no-header cases)
+        df = pd.read_csv(caption_file_path)
         
-        # Convert to DataFrame
-        df = pd.DataFrame(data)
+        # Standardize column names (case-insensitive)
+        df.columns = [col.lower().strip() for col in df.columns]
         
-        if df.empty:
-            print("⚠️ No valid captions found. Check input file format.")
-        else:
-            # Save to CSV
-            df.to_csv(output_csv_path, index=False)
-            print(f"✅ Successfully processed {len(df)} captions. Saved to: {output_csv_path}")
+        # Check required columns
+        if not all(col in df.columns for col in ['image', 'caption']):
+            raise ValueError("CSV must contain 'image' and 'caption' columns")
         
+        # Clean and process
+        df['caption'] = df['caption'].apply(clean_caption)
+        df['image'] = df['image'].str.split('#').str[0]  # Remove suffixes like #0
+        
+        # Remove duplicates
+        df = df.drop_duplicates(subset=['image', 'caption'])
+        
+        # Save to CSV
+        df.to_csv(output_csv_path, index=False)
+        print(f"✅ Processed {len(df)} captions. Saved to: {output_csv_path}")
         return df
-    
+        
     except Exception as e:
-        print(f"❌ Error processing Flickr8K dataset: {str(e)}")
-        return pd.DataFrame()  # Return empty DataFrame on error
+        print(f"❌ Error processing dataset: {str(e)}")
+        return pd.DataFrame()
 
-# Example usage
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description='Process Flickr8K captions into a cleaned CSV')
-    parser.add_argument('--caption_file', type=str, required=True,
-                       help='Path to Flickr8K caption.txt file (e.g., "/kaggle/input/flickr8k/caption.txt")')
-    parser.add_argument('--output_csv', type=str, default='flickr8k_processed.csv',
-                       help='Output path for processed CSV (default: flickr8k_processed.csv)')
+    parser = argparse.ArgumentParser(description='Process Flickr8K captions CSV')
+    parser.add_argument('--caption_file', required=True, help='Path to captions.csv')
+    parser.add_argument('--output_csv', default='flickr8k_processed.csv', help='Output CSV path')
     
     args = parser.parse_args()
-    
-    # Process the dataset
     df = process_flickr8k(args.caption_file, args.output_csv)
     
-    # Debug: Print first 5 rows if data exists
     if not df.empty:
-        print("\nSample processed captions:")
-        print(df.head())
+        print("\nSample output:")
+        print(df.head(3))
