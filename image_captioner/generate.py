@@ -1,5 +1,6 @@
 import torch
 from PIL import Image
+import matplotlib.pyplot as plt
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
 from huggingface_hub import hf_hub_download
 
@@ -63,7 +64,7 @@ def generate_caption(
     model_path = hf_hub_download(repo_id=repo_id, filename=filename, repo_type="model")
     model, _, _ = load_checkpoint(model_path, model, optimizer=None, device=device)
 
-    # Now resize token embeddings after loading weights
+    # Resize token embeddings AFTER loading weights
     model.gpt2.resize_token_embeddings(len(tokenizer))
 
     model.eval()
@@ -84,6 +85,18 @@ def generate_caption(
     return tokenizer.decode(input_ids[0], skip_special_tokens=True)
 
 
+def show_image_with_caption(image_path: str, caption: str):
+    """Display the image along with its generated caption using matplotlib."""
+    image = Image.open(image_path).convert("RGB")
+    plt.figure(figsize=(8, 6))
+    plt.imshow(image)
+    plt.axis("off")
+    plt.title(caption, fontsize=14)
+    plt.show()
+
+
 if __name__ == "__main__":
-    caption = generate_caption("/kaggle/input/flickr8k/Images/1000268201_693b08cb0e.jpg")
-    print("Generated Caption:", caption)
+    test_image = "/kaggle/input/flickr8k/Images/1000268201_693b08cb0e.jpg"
+    generated_caption = generate_caption(test_image)
+    print("Generated Caption:", generated_caption)
+    show_image_with_caption(test_image, generated_caption)
