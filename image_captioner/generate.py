@@ -52,7 +52,7 @@ def generate_caption(
     repo_type="model")
     # Load only the model weights
     model, _, _ = load_checkpoint(
-    path=checkpoint_path,
+    path=model_path,
     model=model,
     optimizer=None,  # Pass None to skip optimizer loading
     device="cuda"     # or "cpu"
