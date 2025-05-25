@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import GPT2LMHeadModel
+from transformers import GPT2LMHeadModel, GPT2Config
 
 class TransformerBridge(nn.Module):
     def __init__(self, image_feature_dim=512, gpt2_hidden_dim=768, 
@@ -12,7 +12,8 @@ class TransformerBridge(nn.Module):
             nhead=num_heads,
             dim_feedforward=2048, 
             batch_first=True,
-            dropout=dropout
+            dropout=dropout,
+            activation='gelu'
         )
         self.image_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
