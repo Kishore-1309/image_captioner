@@ -3,6 +3,7 @@ from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel, GPT2LMHeadMode
 from PIL import Image
 from .model import CLIPGPT2CaptionModel, TransformerBridge
 from .config import Config
+from .utils import load_checkpoint
 from huggingface_hub import hf_hub_download
 
 config = Config()
