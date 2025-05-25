@@ -63,10 +63,11 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
             optimizer.zero_grad()
             outputs = model(**inputs)
             loss = outputs.loss
-            if loss.dim() > 0:  # Make sure it's a scalar
+            if loss.dim() != 0:  # Make sure it's a scalar
                 loss = loss.mean()
             loss.backward()
             optimizer.step()
+            optimizer.zero_grad()
 
             total_loss += loss.item()
             progress_bar.set_postfix(loss=loss.item())
