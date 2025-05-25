@@ -1,11 +1,12 @@
 import torch
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
 from PIL import Image
+from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
+from huggingface_hub import hf_hub_download
+
 from .model import CLIPGPT2CaptionModel, TransformerBridge
 from .config import Config
 from .utils import load_checkpoint
 from .feature_extractor import load_clip_model, extract_features_from_image
-from huggingface_hub import hf_hub_download
 
 config = Config()
 device = config.DEVICE
@@ -19,27 +20,27 @@ def generate_caption(
     top_k: int = 50
 ) -> str:
     """
-    Generate caption for an image using trained model downloaded from Hugging Face Hub.
+    Generate a caption for a given image using a trained CLIP-GPT2 model.
 
     Args:
         image_path: Path to input image
         repo_id: Hugging Face repo ID where model is stored
-        filename: Name of the checkpoint file in the repo
-        max_length: Maximum caption length
-        temperature: Generation temperature (higher = more creative)
-        top_k: Top-k sampling parameter
+        filename: Checkpoint filename
+        max_length: Max caption length
+        temperature: Sampling temperature
+        top_k: Top-k sampling
 
     Returns:
         Generated caption string
     """
 
-    # Load CLIP model and processor using modular function
-    clip_model, processor, device = load_clip_model(device=device)
+    # Load CLIP model and processor
+    clip_model, processor, _ = load_clip_model()
 
-    # Extract image features using modular function
-    feature_tensor = extract_features_from_image(
+    # Extract image features
+    image_tensor = extract_features_from_image(
         image_path=image_path,
-        save_path="temp.pt",  # temp file, or you can skip saving
+        save_path="/tmp/temp.pt",  # Temporary save path
         model=clip_model,
         processor=processor,
         device=device
@@ -50,49 +51,37 @@ def generate_caption(
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.add_special_tokens({"bos_token": "<bos>", "eos_token": "<eos>"})
 
-    # GPT-2 setup with cross-attention
+    # Setup GPT2 with cross-attention
     gpt2_config = GPT2Config.from_pretrained("gpt2")
     gpt2_config.add_cross_attention = True
-    gpt2 = GPT2LMHeadModel(gpt2_config)  # Initialize from config only
+    gpt2 = GPT2LMHeadModel(gpt2_config)
 
-    # Build the complete model
+    # Build final model
     bridge = TransformerBridge()
     model = CLIPGPT2CaptionModel(bridge, gpt2)
     model.gpt2.resize_token_embeddings(len(tokenizer))
 
-    # Load trained checkpoint
-    model_path = hf_hub_download(
-        repo_id=repo_id,
-        filename=filename,
-        repo_type="model"
-    )
-    model, _, _ = load_checkpoint(
-        path=model_path,
-        model=model,
-        optimizer=None,
-        device=device
-    )
+    # Load trained weights from Hugging Face
+    model_path = hf_hub_download(repo_id=repo_id, filename=filename, repo_type="model")
+    model, _, _ = load_checkpoint(model_path, model, optimizer=None, device=device)
     model.eval()
     model.to(device)
 
-    # Start caption generation
+    # Generate caption
     input_ids = tokenizer.encode(tokenizer.bos_token, return_tensors="pt").to(device)
 
     with torch.no_grad():
         for _ in range(max_length):
-            outputs = model(input_ids, None, feature_tensor)
-            next_token_logits = outputs.logits[:, -1, :] / temperature
-            next_token = torch.multinomial(
-                torch.softmax(next_token_logits, dim=-1),
-                num_samples=1
-            )
+            outputs = model(input_ids, None, image_tensor)
+            logits = outputs.logits[:, -1, :] / temperature
+            next_token = torch.multinomial(torch.softmax(logits, dim=-1), num_samples=1)
             input_ids = torch.cat([input_ids, next_token], dim=-1)
             if next_token.item() == tokenizer.eos_token_id:
                 break
 
     return tokenizer.decode(input_ids[0], skip_special_tokens=True)
 
+
 if __name__ == "__main__":
-    # Example usage
-    caption = generate_caption("test_image.jpg")
+    caption = generate_caption("/kaggle/input/flickr8k/Images/1000268201_693b08cb0e.jpg")
     print("Generated Caption:", caption)
