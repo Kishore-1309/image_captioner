@@ -1,5 +1,5 @@
 import torch
-from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel, GPT2LMHeadModel
+from transformers import GPT2Tokenizer, CLIPProcessor, CLIPModel, GPT2LMHeadModel,GPT2Config
 from PIL import Image
 from .model import CLIPGPT2CaptionModel, TransformerBridge
 from .config import Config
@@ -7,6 +7,7 @@ from .utils import load_checkpoint
 from huggingface_hub import hf_hub_download
 
 config = Config()
+device = config.DEVICE
 
 def generate_caption(
     image_path: str,
@@ -31,7 +32,7 @@ def generate_caption(
         Generated caption string
     """
     # Load device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load CLIP model and processor
     clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
@@ -40,11 +41,12 @@ def generate_caption(
     # Load GPT-2 and tokenizer
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
-    gpt2 = GPT2LMHeadModel.from_pretrained("gpt2").to(device)
-
-    # Build captioning model
-    bridge = TransformerBridge().to(device)
-    model = CLIPGPT2CaptionModel(bridge, gpt2).to(device)
+    # Model setup
+    gpt2_config = GPT2Config.from_pretrained("gpt2")
+    gpt2_config.add_cross_attention = True
+    gpt2 = GPT2LMHeadModel.from_pretrained("gpt2", config=gpt2_config)
+    bridge = TransformerBridge()
+    model = CLIPGPT2CaptionModel(bridge, gpt2)
 
     # Download checkpoint from Hugging Face
     model_path = hf_hub_download(repo_id="Kishore0729/image-captioning-model",
