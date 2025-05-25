@@ -8,11 +8,11 @@ setup(
     author="Chandra Kishore",
     author_email="chkishoreg@gmail.com",
     install_requires=[
-        "torch>=1.10.0",
-        "transformers>=4.25.0",
-        "pandas>=1.5.0",
-        "tqdm>=4.64.0",
-        "Pillow>=9.3.0",
+        "torch>=2.6.0,<2.7.0",
+        "transformers>=4.51.0,<4.52.0",
+        "pandas>=2.2.0,<2.3.0",
+        "tqdm>=4.67.0,<4.68.0",
+        "Pillow>=11.1.0,<11.2.0",
         "clip @ git+https://github.com/openai/CLIP.git"
     ],
     entry_points={
