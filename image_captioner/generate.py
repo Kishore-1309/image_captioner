@@ -81,28 +81,14 @@ def generate_caption(
             input_ids = torch.cat([input_ids, next_token], dim=-1)
             if next_token.item() == tokenizer.eos_token_id:
                 break
-        image = Image.open(image_path).convert("RGB")
-        plt.figure(figsize=(8, 6))
-        plt.imshow(image)
-        plt.axis("off")
-        plt.title(caption, fontsize=14)
-        plt.show()
 
     return tokenizer.decode(input_ids[0], skip_special_tokens=True)
 
 
-def show_image_with_caption(image_path: str, caption: str):
-    """Display the image along with its generated caption using matplotlib."""
-    image = Image.open(image_path).convert("RGB")
-    plt.figure(figsize=(8, 6))
-    plt.imshow(image)
-    plt.axis("off")
-    plt.title(caption, fontsize=14)
-    plt.show()
 
 
 if __name__ == "__main__":
     test_image = "/kaggle/input/flickr8k/Images/1000268201_693b08cb0e.jpg"
     generated_caption = generate_caption(test_image)
     print("Generated Caption:", generated_caption)
-    show_image_with_caption(test_image, generated_caption)
+    
