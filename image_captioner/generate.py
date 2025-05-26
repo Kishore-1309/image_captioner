@@ -17,7 +17,7 @@ def generate_caption(
     repo_id: str = "Kishore0729/image-captioning-model",
     filename: str = "checkpoint_epoch_10.pt",
     max_length: int = 30,
-    temperature: float = 0.7,
+    temperature: float = 0.9,
     top_k: int = 50
 ) -> str:
     """
@@ -85,10 +85,8 @@ def generate_caption(
     return tokenizer.decode(input_ids[0], skip_special_tokens=True)
 
 
-
-
 if __name__ == "__main__":
     test_image = "/kaggle/input/flickr8k/Images/1000268201_693b08cb0e.jpg"
     generated_caption = generate_caption(test_image)
     print("Generated Caption:", generated_caption)
-    
+    show_image_with_caption(test_image, generated_caption)
