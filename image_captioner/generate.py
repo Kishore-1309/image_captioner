@@ -17,7 +17,7 @@ def generate_caption(
     repo_id: str = "Kishore0729/image-captioning-model",
     filename: str = "checkpoint_epoch_10.pt",
     max_length: int = 30,
-    temperature: float = 0.9,
+    temperature: float = 0.5,
     top_k: int = 50
 ) -> str:
     """

@@ -27,7 +27,7 @@ def extract_features_from_image(image_path, save_path, model, processor, device)
         features = model.get_image_features(**inputs).squeeze(0).cpu()  # Shape: [512]
 
     torch.save(features, save_path)
-    print(f"Saved features to {save_path}")
+    #print(f"Saved features to {save_path}")
     return features
 
 
