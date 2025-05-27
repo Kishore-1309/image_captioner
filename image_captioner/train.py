@@ -41,7 +41,7 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     #loading weights from huggingface
     checkpoint_path = hf_hub_download(
     repo_id="Kishore0729/image-captioning-model",
-    filename="checkpoint_epoch_10.pt",  # or name of file you uploaded
+    filename="checkpoint_epoch_7.pt",  # or name of file you uploaded
     repo_type="model"
     )
     # Load only the model weights
