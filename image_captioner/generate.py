@@ -17,7 +17,7 @@ def generate_caption(
     repo_id: str = "Kishore0729/image-captioning-model",
     filename: str = "checkpoint_epoch_10.pt",
     max_length: int = 30,
-    temperature: float = 0.5,
+    temperature: float = 0.7,
     top_k: int = 50
 ) -> str:
     """
@@ -72,6 +72,7 @@ def generate_caption(
 
     # Generate caption
     input_ids = tokenizer.encode(tokenizer.bos_token, return_tensors="pt").to(device)
+    attention_mask = torch.ones_like(input_ids).to(device)
 
     with torch.no_grad():
         for _ in range(max_length):
@@ -79,6 +80,7 @@ def generate_caption(
             logits = outputs.logits[:, -1, :] / temperature
             next_token = torch.multinomial(torch.softmax(logits, dim=-1), num_samples=1)
             input_ids = torch.cat([input_ids, next_token], dim=-1)
+            attention_mask = torch.ones_like(input_ids).to(device)
             if next_token.item() == tokenizer.eos_token_id:
                 break
 
