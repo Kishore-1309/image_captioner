@@ -15,9 +15,9 @@ device = config.DEVICE
 def generate_caption(
     image_path: str,
     repo_id: str = "Kishore0729/image-captioning-model",
-    filename: str = "checkpoint_epoch_10.pt",
+    filename: str = "checkpoint_epoch_7.pt",
     max_length: int = 30,
-    temperature: float = 0.7,
+    temperature: float = 0.5,
     top_k: int = 50
 ) -> str:
     """
