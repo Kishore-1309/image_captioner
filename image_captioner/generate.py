@@ -1,6 +1,6 @@
 import torch
+from torch.nn import functional as F
 from PIL import Image
-import matplotlib.pyplot as plt
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
 from huggingface_hub import hf_hub_download
 
@@ -11,6 +11,20 @@ from .feature_extractor import load_clip_model, extract_features_from_image
 
 config = Config()
 device = config.DEVICE
+
+def top_k_logits(logits, k):
+    """
+    Keep only top k logits, set the rest to -inf to zero out their softmax probability.
+    """
+    if k == 0:
+        return logits
+    values, _ = torch.topk(logits, k)
+    min_values = values[:, -1, None]
+    return torch.where(
+        logits < min_values,
+        torch.full_like(logits, float('-inf')),
+        logits,
+    )
 
 def generate_caption(
     image_path: str,
@@ -78,9 +92,16 @@ def generate_caption(
         for _ in range(max_length):
             outputs = model(input_ids, None, image_tensor)
             logits = outputs.logits[:, -1, :] / temperature
-            next_token = torch.multinomial(torch.softmax(logits, dim=-1), num_samples=1)
+            
+            # Apply top-k filtering on logits before softmax
+            filtered_logits = top_k_logits(logits, top_k)
+            
+            probs = F.softmax(filtered_logits, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+
             input_ids = torch.cat([input_ids, next_token], dim=-1)
             attention_mask = torch.ones_like(input_ids).to(device)
+
             if next_token.item() == tokenizer.eos_token_id:
                 break
 
