@@ -1,6 +1,4 @@
 import torch
-import os
-import tempfile
 from PIL import Image
 import matplotlib.pyplot as plt
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
@@ -40,11 +38,10 @@ def generate_caption(
     # Load CLIP model and processor
     clip_model, processor, _ = load_clip_model()
 
-    temp_feature_path = os.path.join(tempfile.gettempdir(), "clip_temp.pt")
     # Extract image features
     image_tensor = extract_features_from_image(
         image_path=image_path,
-        save_path=temp_feature_path,  # Temporary save path
+        save_path="/tmp/temp.pt",  # Temporary save path
         model=clip_model,
         processor=processor,
         device=device
