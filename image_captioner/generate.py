@@ -1,6 +1,7 @@
 import torch
-from torch.nn import functional as F
+import torch.nn.functional as F
 from PIL import Image
+import matplotlib.pyplot as plt
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
 from huggingface_hub import hf_hub_download
 
@@ -12,19 +13,20 @@ from .feature_extractor import load_clip_model, extract_features_from_image
 config = Config()
 device = config.DEVICE
 
-def top_k_logits(logits, k):
-    """
-    Keep only top k logits, set the rest to -inf to zero out their softmax probability.
-    """
-    if k == 0:
-        return logits
-    values, _ = torch.topk(logits, k)
-    min_values = values[:, -1, None]
-    return torch.where(
-        logits < min_values,
-        torch.full_like(logits, float('-inf')),
-        logits,
-    )
+def top_p_filtering(logits, top_p=0.9, filter_value=-float('Inf')):
+    """ Filter logits using nucleus (top-p) filtering """
+    sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+    cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+
+    # Remove tokens with cumulative probability above top_p
+    sorted_indices_to_remove = cumulative_probs > top_p
+    # Shift right to keep first token above threshold
+    sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+    sorted_indices_to_remove[..., 0] = 0
+
+    indices_to_remove = sorted_indices[sorted_indices_to_remove]
+    logits[indices_to_remove] = filter_value
+    return logits
 
 def generate_caption(
     image_path: str,
@@ -32,7 +34,8 @@ def generate_caption(
     filename: str = "checkpoint_epoch_8.pt",
     max_length: int = 30,
     temperature: float = 0.5,
-    top_k: int = 50
+    top_k: int = 50,
+    top_p: float = 0.9
 ) -> str:
     """
     Generate a caption for a given image using a trained CLIP-GPT2 model.
@@ -43,7 +46,8 @@ def generate_caption(
         filename: Checkpoint filename
         max_length: Max caption length
         temperature: Sampling temperature
-        top_k: Top-k sampling
+        top_k: Top-k sampling (set 0 to disable)
+        top_p: Top-p (nucleus) sampling probability
 
     Returns:
         Generated caption string
@@ -55,7 +59,7 @@ def generate_caption(
     # Extract image features
     image_tensor = extract_features_from_image(
         image_path=image_path,
-        save_path="/tmp/temp.pt",  # Temporary save path
+        save_path="/tmp/temp.pt",  # Temporary save path; make sure /tmp exists or change path
         model=clip_model,
         processor=processor,
         device=device
@@ -92,11 +96,17 @@ def generate_caption(
         for _ in range(max_length):
             outputs = model(input_ids, None, image_tensor)
             logits = outputs.logits[:, -1, :] / temperature
-            
-            # Apply top-k filtering on logits before softmax
-            filtered_logits = top_k_logits(logits, top_k)
-            
-            probs = F.softmax(filtered_logits, dim=-1)
+
+            # Apply top-k filtering
+            if top_k > 0:
+                topk_values, _ = torch.topk(logits, top_k)
+                min_topk = topk_values[:, -1].unsqueeze(-1)
+                logits = torch.where(logits < min_topk, torch.full_like(logits, -float('Inf')), logits)
+
+            # Apply top-p (nucleus) filtering
+            logits = top_p_filtering(logits, top_p=top_p)
+
+            probs = torch.softmax(logits, dim=-1)
             next_token = torch.multinomial(probs, num_samples=1)
 
             input_ids = torch.cat([input_ids, next_token], dim=-1)
@@ -112,4 +122,5 @@ if __name__ == "__main__":
     test_image = "/kaggle/input/flickr8k/Images/1000268201_693b08cb0e.jpg"
     generated_caption = generate_caption(test_image)
     print("Generated Caption:", generated_caption)
-    show_image_with_caption(test_image, generated_caption)
+    # You need to define or import `show_image_with_caption` if you want to use it here
+    # show_image_with_caption(test_image, generated_caption)
