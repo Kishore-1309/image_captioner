@@ -15,7 +15,7 @@ device = config.DEVICE
 def generate_caption(
     image_path: str,
     repo_id: str = "Kishore0729/image-captioning-model",
-    filename: str = "checkpoint_epoch_8.pt",
+    filename: str = "model_1.pt",
     max_length: int = 30,
     temperature: float = 0.5,
     top_k: int = 50
@@ -91,4 +91,4 @@ if __name__ == "__main__":
     test_image = "/kaggle/input/flickr8k/Images/1000268201_693b08cb0e.jpg"
     generated_caption = generate_caption(test_image)
     print("Generated Caption:", generated_caption)
-    show_image_with_caption(test_image, generated_caption)
+     
