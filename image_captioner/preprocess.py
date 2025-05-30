@@ -40,7 +40,7 @@ def process_coco_json(json_path: str) -> pd.DataFrame:
         image_id = ann["image_id"]
         caption = ann["caption"]
         filename = image_id_to_filename.get(image_id, f"{image_id}.jpg")
-        rows.append(filename, caption)
+        rows.append((filename, caption))
 
     df = pd.DataFrame(rows, columns=["image", "caption"])
     df = df.drop_duplicates(subset=['image', 'caption'])
@@ -54,7 +54,7 @@ def process_caption_file(input_path: str, output_csv_path: str = "processed_capt
         raise FileNotFoundError(f"File not found: {input_path}")
 
     ext = os.path.splitext(input_path)[1].lower()
-    if ext == ".csv":
+    if ext == ".txt":
         df = process_flickr8k_csv(input_path)
     elif ext == ".json":
         df = process_coco_json(input_path)
