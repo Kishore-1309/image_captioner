@@ -12,7 +12,7 @@ class TransformerBridge(nn.Module):
             nhead=num_heads,
             dim_feedforward=2048, 
             batch_first=True,
-            dropout=dropout,
+            #dropout=dropout,
             activation='gelu'
         )
         self.image_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
