@@ -36,7 +36,7 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
         model = torch.nn.DataParallel(model)
 
     model = model.to(device)
-    optimizer = AdamW(model.parameters(), lr=lr,weight_decay=0.01)
+    optimizer = AdamW(model.parameters(), lr=lr,weight_decay=0.001)
 
     #loading weights from huggingface
     checkpoint_path = hf_hub_download(
