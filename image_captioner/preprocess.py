@@ -19,7 +19,7 @@ def process_flickr8k_csv(caption_file_path: str) -> pd.DataFrame:
     if not all(col in df.columns for col in ['image', 'caption']):
         raise ValueError("CSV must contain 'image' and 'caption' columns")
 
-    df['caption'] = df['caption'].apply(clean_caption)
+    df['caption'] = df['caption']
     df['image'] = df['image'].str.split('#').str[0]  # Remove suffixes like #0
     df = df.drop_duplicates(subset=['image', 'caption'])
     return df
@@ -40,7 +40,7 @@ def process_coco_json(json_path: str) -> pd.DataFrame:
         image_id = ann["image_id"]
         caption = ann["caption"]
         filename = image_id_to_filename.get(image_id, f"{image_id}.jpg")
-        rows.append((filename, clean_caption(caption)))
+        rows.append(filename, caption)
 
     df = pd.DataFrame(rows, columns=["image", "caption"])
     df = df.drop_duplicates(subset=['image', 'caption'])
