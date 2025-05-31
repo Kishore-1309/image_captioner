@@ -18,6 +18,7 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     # Initialize components
     df = pd.read_csv(caption_csv)
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    tokenizer.pad_token = tokenizer.eos_token
     dataset = CaptionDataset(df, tokenizer, feature_dir, config.MAX_LENGTH)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
