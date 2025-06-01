@@ -1,6 +1,7 @@
 import os
 import csv
 import torch
+from tqdm import tqdm
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2Config
 from huggingface_hub import hf_hub_download
 
@@ -19,12 +20,8 @@ def generate_caption_from_tensor(
     temperature: float = 0.7,
     top_k: int = 50
 ) -> str:
-    """
-    Generate a caption from a CLIP image tensor using a trained CLIP-GPT2 model.
-    """
     model.eval()
     input_ids = tokenizer.encode(tokenizer.bos_token, return_tensors="pt").to(device)
-    attention_mask = torch.ones_like(input_ids).to(device)
 
     with torch.no_grad():
         for _ in range(max_length):
@@ -44,9 +41,6 @@ def generate_captions_for_folder(
     repo_id: str = "Kishore0729/image-captioning-model",
     filename: str = "model_3.pt"
 ):
-    """
-    Generate captions for all image features (.pt) in a folder and save to CSV.
-    """
     # Load tokenizer and model
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
@@ -65,18 +59,19 @@ def generate_captions_for_folder(
     model.gpt2.resize_token_embeddings(len(tokenizer))
     model.to(device)
 
-    # Prepare output
+    # Prepare results
     results = []
 
-    # Iterate through all .pt files in the folder
-    for fname in os.listdir(features_folder):
-        if fname.endswith(".pt"):
-            image_id = os.path.splitext(fname)[0]
-            tensor_path = os.path.join(features_folder, fname)
-            image_tensor = torch.load(tensor_path).unsqueeze(0).to(device)  # Shape: [1, 512]
-            caption = generate_caption_from_tensor(image_tensor, model, tokenizer)
-            results.append({"image_id": image_id, "caption": caption})
-            print(f"Caption generated for {image_id}: {caption}")
+    pt_files = [f for f in os.listdir(features_folder) if f.endswith(".pt")]
+
+    print(f"Generating captions for {len(pt_files)} image features...\n")
+
+    for fname in tqdm(pt_files, desc="Generating Captions", unit="file"):
+        image_id = os.path.splitext(fname)[0]
+        tensor_path = os.path.join(features_folder, fname)
+        image_tensor = torch.load(tensor_path).unsqueeze(0).to(device)  # Shape: [1, 512]
+        caption = generate_caption_from_tensor(image_tensor, model, tokenizer)
+        results.append({"image_id": image_id, "caption": caption})
 
     # Write to CSV
     with open(output_csv, mode="w", newline="", encoding="utf-8") as f:
@@ -84,7 +79,7 @@ def generate_captions_for_folder(
         writer.writeheader()
         writer.writerows(results)
 
-    print(f"\nCaptions saved to {output_csv}")
+    print(f"\n✅ Captions saved to: {output_csv}")
 
 
 if __name__ == "__main__":
