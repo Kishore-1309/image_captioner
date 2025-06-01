@@ -19,8 +19,6 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     df = pd.read_csv(caption_csv)
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
-    dataset = CaptionDataset(df, tokenizer, feature_dir, config.MAX_LENGTH)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
     # Model setup
     gpt2_config = GPT2Config.from_pretrained("gpt2")
@@ -42,7 +40,7 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     #loading weights from huggingface
     checkpoint_path = hf_hub_download(
     repo_id="Kishore0729/image-captioning-model",
-    filename="model_3.pt",  # or name of file you uploaded
+    filename="checkpoint_epoch_6.pt",  # or name of file you uploaded
     repo_type="model"
     )
     # Load only the model weights
@@ -52,6 +50,8 @@ def train(feature_dir, caption_csv, batch_size=16, num_epochs=20, lr=5e-5):
     optimizer=None,  # Pass None to skip optimizer loading
     device="cuda"     # or "cpu"
     )
+    dataset = CaptionDataset(df, tokenizer, feature_dir, config.MAX_LENGTH)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
 
     # Training loop
     for epoch in range(num_epochs):

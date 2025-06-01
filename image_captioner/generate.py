@@ -15,7 +15,7 @@ device = config.DEVICE
 def generate_caption(
     image_path: str,
     repo_id: str = "Kishore0729/image-captioning-model",
-    filename: str = "model_3.pt",
+    filename: str = "checkpoint_epoch_6.pt",
     max_length: int = 40,
     temperature: float = 0.7,
     top_k: int = 50
@@ -49,9 +49,8 @@ def generate_caption(
 
     # Load tokenizer and GPT-2 model
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.add_special_tokens({"bos_token": "<bos>", "eos_token": "<eos>"})
-
+    
+    
     gpt2_config = GPT2Config.from_pretrained("gpt2")
     gpt2_config.add_cross_attention = True
     gpt2 = GPT2LMHeadModel(gpt2_config)
@@ -76,7 +75,7 @@ def generate_caption(
 
     with torch.no_grad():
         for _ in range(max_length):
-            outputs = model(input_ids, None, image_tensor)
+            outputs = model(input_ids, attention_mask, image_tensor)
             logits = outputs.logits[:, -1, :] / temperature
             next_token = torch.multinomial(torch.softmax(logits, dim=-1), num_samples=1)
             input_ids = torch.cat([input_ids, next_token], dim=-1)

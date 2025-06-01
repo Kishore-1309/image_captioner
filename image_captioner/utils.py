@@ -17,7 +17,7 @@ def save_checkpoint(model, optimizer, epoch, checkpoint_dir):
     return path
 
 def load_checkpoint(path, model, optimizer=None, device="cpu"):
-    checkpoint = torch.load(path, map_location=device)
+    checkpoint = torch.load(path, weights_only=True,map_location=device)
     state_dict = checkpoint['model_state_dict']
     new_state_dict = {}
 

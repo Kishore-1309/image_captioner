@@ -10,7 +10,7 @@ class CaptionDataset(Dataset):
         self.tokenizer = tokenizer
         self.feature_dir = feature_dir
         self.max_length = max_length
-        self.tokenizer.pad_token = self.tokenizer.eos_token
+        
 
     def __len__(self):
         return len(self.data)
@@ -20,9 +20,16 @@ class CaptionDataset(Dataset):
         image_name = row["image"]
         caption = row["caption"]
         
+        if not isinstance(caption, str):
+            caption = str(caption) if caption is not None else " "
+
+        # Add BOS and EOS tokens to the caption
+        caption = self.tokenizer.bos_token + caption + self.tokenizer.eos_token
+
+        
         # Load image features
         feature_path = os.path.join(self.feature_dir, image_name.replace(".jpg", ".pt"))
-        image_features = torch.load(feature_path)
+        image_features = torch.load(feature_path,weights_only=True)
         
         # Tokenize caption
         encoding = self.tokenizer(
