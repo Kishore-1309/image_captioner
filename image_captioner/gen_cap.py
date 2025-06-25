@@ -39,7 +39,7 @@ def generate_captions_for_folder(
     features_folder: str,
     output_csv: str = "captions.csv",
     repo_id: str = "Kishore0729/image-captioning-model",
-    filename: str = "model_3.pt"
+    filename: str = "checkpoint_epoch_5.pt"
 ):
     # Load tokenizer and model
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
